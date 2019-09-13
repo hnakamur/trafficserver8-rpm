@@ -1,0 +1,16 @@
+--- trafficserver-8.0.5.orig/proxy/http/HttpTransact.cc	2019-08-20 16:58:34.000000000 +0000
++++ trafficserver-8.0.5/proxy/http/HttpTransact.cc	2019-09-13 00:15:27.589563509 +0000
+@@ -5732,6 +5732,13 @@
+   uint32_t cc_mask;
+   cc_mask = (MIME_COOKED_MASK_CC_MUST_REVALIDATE | MIME_COOKED_MASK_CC_PROXY_REVALIDATE | MIME_COOKED_MASK_CC_NEED_REVALIDATE_ONCE |
+              MIME_COOKED_MASK_CC_NO_CACHE | MIME_COOKED_MASK_CC_NO_STORE | MIME_COOKED_MASK_CC_S_MAXAGE);
++  if (s->txn_conf->cache_required_headers == HttpConfigParams::CACHE_REQUIRED_HEADERS_CACHE_CONTROL_S_MAXAGE) {
++    // NOTE: Normally, "4.2.4. Serving Stale Responses" of RFC7234 prohibits a stale cache is served
++    // when s-maxage is specified.
++    // However, when we set cache_required_headers to CACHE_REQUIRED_HEADERS_CACHE_CONTROL_S_MAXAGE,
++    // we would like to serve stale cache even if the origin server response has "s-maxage" header.
++    cc_mask &= ~MIME_COOKED_MASK_CC_S_MAXAGE;
++  }
+   if ((cached_response->get_cooked_cc_mask() & cc_mask) || cached_response->is_pragma_no_cache_set()) {
+     TxnDebug("http_trans", "[is_stale_cache_response_returnable] "
+                            "document headers prevent serving stale");

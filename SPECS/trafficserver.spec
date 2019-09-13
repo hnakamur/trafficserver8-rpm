@@ -1,11 +1,9 @@
-%define _prefix /opt/trafficserver
-
 # https://fedoraproject.org/wiki/Packaging:Guidelines#PIE
 %define _hardened_build 1
 
 Summary:	Fast, scalable and extensible HTTP/1.1 compliant caching proxy server
 Name:		trafficserver
-Version:	7.1.8
+Version:	8.0.5
 Release:	1%{?dist}
 License:	ASL 2.0
 Group:		System Environment/Daemons
@@ -19,14 +17,15 @@ Source4:	trafficserver.service
 Source5:	trafficserver.tmpfilesd
 Patch1:		trafficserver-init_scripts.patch
 
-Patch101:	trafficserver-6.2.0-require-s-maxage.patch
-Patch102:	trafficserver-7.1.4.return_stale_cache_with_s_maxage.patch
+Patch101:	trafficserver-8.0.5-require-s-maxage.patch
+Patch102:	trafficserver-8.0.5.return_stale_cache_with_s_maxage.patch
 
 # BuildRoot is only needed for EPEL5:
 BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 # fails on ARMv7 atm (needs investigation), s390 unsupported
 ExcludeArch:	%{arm} s390 s390x
 
+BuildRequires:	devtoolset-7
 BuildRequires:	boost-devel
 BuildRequires:	gcc-c++
 BuildRequires:	gnupg
@@ -37,6 +36,7 @@ BuildRequires:	perl-ExtUtils-MakeMaker
 BuildRequires:	tcl-devel
 BuildRequires:	zlib-devel
 BuildRequires:	xz-devel
+BuildRequires:	yaml-cpp-devel
 BuildRequires:	autoconf automake libtool
 
 Requires: initscripts
@@ -83,21 +83,36 @@ The trafficserver-perl package contains perl bindings.
 
 %build
 NOCONFIGURE=1 autoreconf -vif
-%configure \
+scl enable devtoolset-7 "./configure \
   --enable-layout=opt \
-  --sysconfdir=%{_prefix}%{_sysconfdir} \
-  --localstatedir=%{_prefix}%{_localstatedir} \
-  --libexecdir=%{_prefix}/%{_lib}/plugins \
-  --with-tcl=/usr/%{_lib} \
-  --with-user=ats --with-group=ats \
-  --disable-silent-rules \
-  --enable-experimental-plugins
+  --prefix=/opt/trafficserver \
+  --includedir=%{_prefix}/include \
+  --datarootdir=%{_prefix}/share \
+  --datadir=%{_prefix}/share \
+  --infodir=%{_prefix}/share/info \
+  --localedir=%{_prefix}/share/locale \
+  --mandir=%{_prefix}/share/man \
+  --docdir=%{_prefix}/share/doc/trafficserver \
+  --htmldir=%{_prefix}/share/doc/trafficserver \
+  --dvidir=%{_prefix}/share/doc/trafficserver \
+  --pdfdir=%{_prefix}/share/doc/trafficserver \
+  --psdir=%{_prefix}/share/doc/trafficserver \
+  --exec-prefix=%{_prefix} \
+  --sysconfdir=/opt/trafficserver/etc --libdir=%{_libdir} \
+  --localstatedir=/opt/trafficserver/var \
+  --libexecdir=%{_prefix}/lib/trafficserver/modules \
+  --with-user=ats --with-group=ats --disable-silent-rules \
+  --enable-experimental-plugins --enable-32bit-build \
+  --enable-mime-sanity-check \
+  --with-yaml-cpp=%{_prefix} \
+  --enable-wccp \
+"
 
-make %{?_smp_mflags} V=1
+scl enable devtoolset-7 "make %{?_smp_mflags} V=1"
 
 %install
 rm -rf %{buildroot}
-make DESTDIR=%{buildroot} install
+scl enable devtoolset-7 "make DESTDIR=%{buildroot} install"
 
 # Remove duplicate man-pages:
 rm -rf %{buildroot}%{_docdir}/trafficserver
@@ -131,24 +146,9 @@ perl -pi -e 's/^CONFIG.*proxy.config.ssl.server.cert.path.*$/CONFIG proxy.config
 perl -pi -e 's/^CONFIG.*proxy.config.ssl.server.private_key.path.*$/CONFIG proxy.config.ssl.server.private_key.path STRING \/etc\/pki\/tls\/private\//' \
 	%{buildroot}/etc/trafficserver/records.config
 
-mkdir -p %{buildroot}%{_sysconfdir}
-mv %{buildroot}%{_prefix}%{_sysconfdir} %{buildroot}%{_sysconfdir}/trafficserver
-ln -s ../..%{_sysconfdir}/trafficserver %{buildroot}%{_prefix}%{_sysconfdir}
-
-rm -rf %{buildroot}%{_prefix}%{_localstatedir}/*
-
-mkdir -p %{buildroot}%{_localstatedir}/run/trafficserver
-ln -s ../../..%{_localstatedir}/run/trafficserver %{buildroot}%{_prefix}%{_localstatedir}/run
-
-mkdir -p %{buildroot}%{_localstatedir}/log/trafficserver
-ln -s ../../..%{_localstatedir}/log/trafficserver %{buildroot}%{_prefix}%{_localstatedir}/logs
-
-mkdir -p %{buildroot}%{_localstatedir}/cache/trafficserver
-ln -s ../../..%{_localstatedir}/cache/trafficserver %{buildroot}%{_prefix}%{_localstatedir}/cache
-
 %check
 %ifnarch ppc64
-make check %{?_smp_mflags} V=1
+scl enable devtoolset-7 "make check %{?_smp_mflags} V=1"
 %endif
 
 # The clean section  is only needed for EPEL and Fedora < 13
@@ -203,45 +203,46 @@ fi
 %{!?_licensedir:%global license %%doc}
 %license LICENSE
 %doc README NOTICE
-%attr(0755, ats, ats) %dir /etc/trafficserver
-%config(noreplace) /etc/trafficserver/*
+%attr(0755, ats, ats) %dir /opt/trafficserver/etc
+%config(noreplace) /opt/trafficserver/etc/*
 %config(noreplace) %{_sysconfdir}/sysconfig/trafficserver
 %{_bindir}/traffic*
 %{_bindir}/tspush
-%dir %{_libdir}
-%dir %{_libdir}/plugins
-%{_libdir}/libts*.so.7*
-%{_libdir}/libatscppapi*.so.7*
-%{_libdir}/plugins/*.so
+%dir %{_prefix}/lib/trafficserver/modules
+%{_libdir}/libts*.so
+%{_libdir}/libts*.so.8*
+%{_prefix}/lib/trafficserver/modules/*.so
 %if %{?fedora}0 > 140 || %{?rhel}0 > 60
 /lib/systemd/system/trafficserver.service
 %config(noreplace) %{_sysconfdir}/tmpfiles.d/trafficserver.conf
 %else
 /etc/init.d/trafficserver
 %endif
-%dir /var/log/trafficserver
-%dir /var/run/trafficserver
-%dir /var/cache/trafficserver
-%{_prefix}%{_sysconfdir}
-%{_prefix}%{_localstatedir}/run
-%{_prefix}%{_localstatedir}/logs
-%{_prefix}%{_localstatedir}/cache
+%attr(0755, ats, ats) %dir /opt/trafficserver/var
+%attr(0755, ats, ats) %dir /opt/trafficserver/var/cache
+%attr(0755, ats, ats) %dir /opt/trafficserver/var/run
+%attr(0755, ats, ats) %dir /opt/trafficserver/var/logs
 
 %files perl
 %defattr(-,root,root,-)
 %{_prefix}/share/man/man3/*
-%{_prefix}/lib/perl5/Apache/TS.pm
-%{_prefix}/lib/perl5/Apache/TS/*
+/opt/trafficserver/lib/perl5/Apache/TS.pm
+/opt/trafficserver/lib/perl5/Apache/TS/*
+/opt/trafficserver/lib/perl5/x86_64-linux-thread-multi/auto/Apache/TS/.packlist
+/opt/trafficserver/lib/perl5/x86_64-linux-thread-multi/perllocal.pod
 
 %files devel
 %defattr(-,root,root,-)
 %{_bindir}/tsxs
 %{_includedir}/ts
-%{_includedir}/atscppapi
-%{_libdir}/*.so
+%{_includedir}/tscpp/api
+%{_includedir}/tscpp/util/
 %{_libdir}/pkgconfig/trafficserver.pc
 
 %changelog
+* Fri Sep 13 2019 Hiroaki Nakamura <hnakamur@gmail.com> 8.0.5-1
+- Update to 8.0.5 LTS release
+
 * Fri Sep 13 2019 Hiroaki Nakamura <hnakamur@gmail.com> 7.1.8-1
 - Update to 7.1.8 LTS release
 
