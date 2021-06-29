@@ -3,7 +3,7 @@
 
 Summary:	Fast, scalable and extensible HTTP/1.1 compliant caching proxy server
 Name:		trafficserver
-Version:	8.0.5
+Version:	8.1.2
 Release:	1%{?dist}
 License:	ASL 2.0
 Group:		System Environment/Daemons
@@ -16,9 +16,6 @@ Source3:	trafficserver.sysconf
 Source4:	trafficserver.service
 Source5:	trafficserver.tmpfilesd
 Patch1:		trafficserver-init_scripts.patch
-
-Patch101:	trafficserver-8.0.5-require-s-maxage.patch
-Patch102:	trafficserver-8.0.5.return_stale_cache_with_s_maxage.patch
 
 # BuildRoot is only needed for EPEL5:
 BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
@@ -36,8 +33,9 @@ BuildRequires:	perl-ExtUtils-MakeMaker
 BuildRequires:	tcl-devel
 BuildRequires:	zlib-devel
 BuildRequires:	xz-devel
-BuildRequires:	yaml-cpp-devel
 BuildRequires:	autoconf automake libtool
+# For running ./tools/check-unused-dependencies in test
+BuildRequires:	python3
 
 Requires: initscripts
 %if %{?fedora}0 > 140 || %{?rhel}0 > 60
@@ -78,8 +76,6 @@ The trafficserver-perl package contains perl bindings.
 %setup -q
 
 %patch1 -p1 -b .init
-%patch101 -p1
-%patch102 -p1
 
 %build
 NOCONFIGURE=1 autoreconf -vif
@@ -104,7 +100,6 @@ scl enable devtoolset-7 "./configure \
   --with-user=ats --with-group=ats --disable-silent-rules \
   --enable-experimental-plugins --enable-32bit-build \
   --enable-mime-sanity-check \
-  --with-yaml-cpp=%{_prefix} \
   --enable-wccp \
 "
 
@@ -240,6 +235,10 @@ fi
 %{_libdir}/pkgconfig/trafficserver.pc
 
 %changelog
+* Tue Jun 29 2021 Hiroaki Nakamura <hnakamur@gmail.com> 8.1.2-1
+- Update to 8.1.2
+- Use yaml-cpp vendored in lib/yamlcpp
+
 * Fri Sep 13 2019 Hiroaki Nakamura <hnakamur@gmail.com> 8.0.5-1
 - Update to 8.0.5 LTS release
 
