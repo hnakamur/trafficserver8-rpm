@@ -35,6 +35,8 @@ BuildRequires:	zlib-devel
 BuildRequires:	xz-devel
 BuildRequires:	yaml-cpp-devel
 BuildRequires:	autoconf automake libtool
+# For running ./tools/check-unused-dependencies in test
+BuildRequires:	python3
 
 Requires: initscripts
 %if %{?fedora}0 > 140 || %{?rhel}0 > 60
