@@ -3,7 +3,7 @@
 
 Summary:	Fast, scalable and extensible HTTP/1.1 compliant caching proxy server
 Name:		trafficserver
-Version:	8.0.5
+Version:	8.1.2
 Release:	1%{?dist}
 License:	ASL 2.0
 Group:		System Environment/Daemons
@@ -235,6 +235,9 @@ fi
 %{_libdir}/pkgconfig/trafficserver.pc
 
 %changelog
+* Tue Jun 29 2021 Hiroaki Nakamura <hnakamur@gmail.com> 8.1.2-1
+- Update to 8.1.2
+
 * Fri Sep 13 2019 Hiroaki Nakamura <hnakamur@gmail.com> 8.0.5-1
 - Update to 8.0.5 LTS release
 
