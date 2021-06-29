@@ -33,7 +33,6 @@ BuildRequires:	perl-ExtUtils-MakeMaker
 BuildRequires:	tcl-devel
 BuildRequires:	zlib-devel
 BuildRequires:	xz-devel
-BuildRequires:	yaml-cpp-devel
 BuildRequires:	autoconf automake libtool
 # For running ./tools/check-unused-dependencies in test
 BuildRequires:	python3
@@ -101,7 +100,6 @@ scl enable devtoolset-7 "./configure \
   --with-user=ats --with-group=ats --disable-silent-rules \
   --enable-experimental-plugins --enable-32bit-build \
   --enable-mime-sanity-check \
-  --with-yaml-cpp=%{_prefix} \
   --enable-wccp \
 "
 
@@ -239,6 +237,7 @@ fi
 %changelog
 * Tue Jun 29 2021 Hiroaki Nakamura <hnakamur@gmail.com> 8.1.2-1
 - Update to 8.1.2
+- Use yaml-cpp vendored in lib/yamlcpp
 
 * Fri Sep 13 2019 Hiroaki Nakamura <hnakamur@gmail.com> 8.0.5-1
 - Update to 8.0.5 LTS release
