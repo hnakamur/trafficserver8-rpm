@@ -17,9 +17,6 @@ Source4:	trafficserver.service
 Source5:	trafficserver.tmpfilesd
 Patch1:		trafficserver-init_scripts.patch
 
-Patch101:	trafficserver-8.0.5-require-s-maxage.patch
-Patch102:	trafficserver-8.0.5.return_stale_cache_with_s_maxage.patch
-
 # BuildRoot is only needed for EPEL5:
 BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 # fails on ARMv7 atm (needs investigation), s390 unsupported
@@ -78,8 +75,6 @@ The trafficserver-perl package contains perl bindings.
 %setup -q
 
 %patch1 -p1 -b .init
-%patch101 -p1
-%patch102 -p1
 
 %build
 NOCONFIGURE=1 autoreconf -vif
